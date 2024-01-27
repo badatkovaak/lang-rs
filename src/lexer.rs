@@ -1,141 +1,169 @@
+const KWORDS: &[&str] = &[
+    "break", "const", "continue", "do", "else", "enum", "false", "float", "fn", "for", "if",
+    "import", "int", "let", // "match",
+    "return", "struct", "then", "true",
+];
+
 #[derive(Debug)]
 pub enum Token {
-    Number(f64),
-    Power,
+    Illegal,
+    Break,
+    Const,
+    Continue,
+    Do,
+    Else,
+    Enum,
+    False,
+    Float,
+    Func,
+    For,
+    If,
+    Int,
+    Let,
+    // Match,
+    Return,
+    Struct,
+    Then,
+    True,
+    Id(Box<str>),
+    IntLiteral(u64),
+    FloatLiteral(f64),
+    StringLiteral(Box<str>),
+    Assign,
+    Equal,
+    NotEqual,
+    LessThen,
+    GreaterThen,
+    LessTEq,
+    GreaterTEq,
+    And,
+    Or,
     Plus,
     Minus,
     Mult,
     Div,
+    // Caret,
     LParen,
     RParen,
+    LSquare,
+    RSquare,
+    Colon,
+    Comma,
 }
 
-pub fn lex(input: &str) -> Vec<Token> {
-    let mut tokens = vec![];
+#[derive(Debug)]
+pub enum LexerError {
+    IllegalCharacter,
+    LexErr,
+}
+
+use LexerError as LE;
+use Token as T;
+
+pub fn tokenize(input: String) -> Result<Vec<Token>, LexerError> {
+    let mut toks = vec![];
     let mut chars = input.chars().peekable();
+
     while let Some(&c) = chars.peek() {
         match c {
-            '0'..='9' => {
-                let mut digits = String::new();
-                let mut has_dot = false;
-                digits.push(c);
+            '+' => {
+                toks.push(T::Plus);
                 chars.next();
-
-                while let Some(&c1) = chars.peek() {
-                    match c1 {
-                        '.' | '0'..='9' => {
-                            if c1 == '.' && !has_dot {
-                                digits.push(c1);
-                                has_dot = true;
-                            } else if c1 == '.' && has_dot {
-                                break;
-                            } else {
-                                digits.push(c1);
-                            }
-                            chars.next();
-                        }
-                        _ => {
-                            break;
-                        }
-                    }
-                }
-                if digits.chars().last() == Some('.') {
-                    digits.push('0');
-                }
-                tokens.push(Token::Number(digits.parse::<f64>().unwrap()));
-            }
-            '.' => {
-                let mut digits= String::new();
-
-                digits.push('.');
-                chars.next();
-
-                while let Some(&c1) = chars.peek() {
-                    match c1 {
-                        '0'..='9' => {
-                            digits.push(c1);
-                            chars.next();
-                        }
-                        _ => {
-                            break;
-                        }
-                    }
-                }
-                if digits.chars().last() == Some('.') {
-                    digits.push('0');
-                }
-                tokens.push(Token::Number(digits.parse::<f64>().unwrap()));
             }
             '-' => {
-                chars.next();
-                if let Some(&c1) = chars.peek() {
-                    match c1 {
-                        ' ' => {
-                            tokens.push(Token::Minus);
-                        }
-                        '.' | '0'..='9' => {
-                            let mut digits = String::new();
-                            let mut has_dot = false;
-                            digits.push(c);
-                            // chars.next();
-
-                            while let Some(&c1) = chars.peek() {
-                                match c1 {
-                                    '.' | '0'..='9' => {
-                                        if c1 == '.' && !has_dot {
-                                            digits.push(c1);
-                                            has_dot = true;
-                                        } else if c1 == '.' && has_dot {
-                                            break;
-                                        } else {
-                                            digits.push(c1);
-                                        }
-                                        chars.next();
-                                    }
-                                    _ => {
-                                        break;
-                                    }
-                                }
-                            }
-                            if digits.chars().last() == Some('.') {
-                                digits.push('0');
-                            }
-                            tokens.push(Token::Number(digits.parse::<f64>().unwrap()));
-                        }
-                        _ => {
-                            break;
-                        }
-                    }
-                }
-            }
-            '+' => {
-                tokens.push(Token::Plus);
-                chars.next();
-            }
-            '*' => {
-                tokens.push(Token::Mult);
+                toks.push(T::Minus);
                 chars.next();
             }
             '/' => {
-                tokens.push(Token::Div);
+                toks.push(T::Div);
+                chars.next();
+            }
+            '*' => {
+                toks.push(T::Mult);
+                chars.next();
+            }
+            ',' => {
+                toks.push(T::Comma);
                 chars.next();
             }
             '(' => {
-                tokens.push(Token::LParen);
+                toks.push(T::LParen);
                 chars.next();
             }
             ')' => {
-                tokens.push(Token::RParen);
+                toks.push(T::RParen);
                 chars.next();
             }
-            '^' => {
-                tokens.push(Token::Power);
+            '[' => {
+                toks.push(T::LSquare);
                 chars.next();
             }
+            ']' => {
+                toks.push(T::RSquare);
+                chars.next();
+            }
+            ':' => {
+                toks.push(T::Colon);
+                chars.next();
+            }
+            '<' => {
+                chars.next();
+                if let Some(&d) = chars.peek() {
+                    match d {
+                        '=' => {
+                            toks.push(T::LessTEq);
+                            chars.next();
+                        }
+                        _ => {
+                            toks.push(T::LessThen);
+                        }
+                    }
+                }
+            }
+            '>' => {
+                chars.next();
+                if let Some(&d) = chars.peek() {
+                    match d {
+                        '=' => {
+                            toks.push(T::GreaterTEq);
+                            chars.next();
+                        }
+                        _ => {
+                            toks.push(T::GreaterThen);
+                        }
+                    }
+                }
+            }
+            '!' => {
+                chars.next();
+                if let Some(&d) = chars.peek() {
+                    if d == '=' {
+                        toks.push(T::NotEqual);
+                        chars.next();
+                    } else {
+                        return Err(LE::IllegalCharacter);
+                    }
+                }
+            }
+            '=' => {
+                chars.next();
+                if let Some(&d) = chars.peek() {
+                    match d {
+                        '=' => {
+                            toks.push(T::Equal);
+                            chars.next();
+                        }
+                        _ => {
+                            toks.push(T::Assign);
+                        }
+                    }
+                }
+            }
+            a if a.is_ascii_alphabetic() => {}
             _ => {
-                chars.next();
+                return Err(LE::LexErr);
             }
         }
     }
-    tokens
+    Ok(toks)
 }
