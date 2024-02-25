@@ -6,16 +6,16 @@ pub enum Token {
     Continue,
     Do,
     Else,
-    Enum,
+    // Enum,
     False,
     Float,
-    Func,
+    // Func,
     For,
     If,
     Int,
     Let,
     Return,
-    Struct,
+    // Struct,
     Then,
     True,
     Id(Rc<str>),
@@ -24,6 +24,8 @@ pub enum Token {
     StringLiteral(Rc<str>),
     Pipe,
     Composition,
+    FatArrow,
+    ThinArrow,
     Assign,
     Equal,
     NotEqual,
@@ -44,6 +46,8 @@ pub enum Token {
     Colon,
     Comma,
     Dot,
+    Indent,
+    Deindent,
 }
 
 #[derive(Debug)]
@@ -63,23 +67,23 @@ use Token as T;
 //     "return", "struct", "then", "true",
 // ];
 
-pub fn lex(input: &str) -> Result<Vec<Token>, LexerError> {
+pub fn lex(input: &str, spaces_per_indent: u64) -> Result<Vec<Token>, LexerError> {
     let keywords: HashMap<&str, Token> = HashMap::from([
         ("break", T::Break),
         ("const", T::Const),
         ("continue", T::Continue),
         ("do", T::Do),
         ("else", T::Else),
-        ("enum", T::Enum),
+        // ("enum", T::Enum),
         ("false", T::False),
         ("float", T::Float),
-        ("fn", T::Func),
+        // ("fn", T::Func),
         ("for", T::For),
         ("if", T::If),
         ("int", T::Int),
         ("let", T::Let), // "match",
         ("return", T::Return),
-        ("struct", T::Struct),
+        // ("struct", T::Struct),
         ("then", T::Then),
         ("true", T::True),
     ]);
@@ -153,8 +157,19 @@ pub fn lex(input: &str) -> Result<Vec<Token>, LexerError> {
                 chars.next();
             }
             '-' => {
-                toks.push(T::Minus);
                 chars.next();
+                if let Some(&d) = chars.peek() {
+                    match d {
+                        '>' => {
+                            toks.push(T::ThinArrow);
+                            chars.next();
+                        }
+                        _ => {
+                            toks.push(T::Minus);
+                            // chars.next();
+                        }
+                    }
+                }
             }
             '/' => {
                 toks.push(T::Div);
@@ -271,6 +286,10 @@ pub fn lex(input: &str) -> Result<Vec<Token>, LexerError> {
                     match d {
                         '=' => {
                             toks.push(T::Equal);
+                            chars.next();
+                        }
+                        '>' => {
+                            toks.push(T::FatArrow);
                             chars.next();
                         }
                         _ => {

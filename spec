@@ -4,10 +4,8 @@ Types:
     bool
     unit - ()
     string
-    function
-    array ?
-    table - hashmap ?
-    gadt - product and sum
+    vector & hashmap
+    gadt
 
 Syntax:
     
@@ -18,15 +16,20 @@ Syntax:
 
     let x = if a then 1 else 2
     
-    fn add(int x, (int -> bool -> float) y) -> float
+    let add = (int x, (int -> bool -> float) y) -> float:
         y x false
 
-    or 
+    let add = (x, y) => do:
+        x + y
+
+    let add = (x, y) => x + y
     
-    fn add(int x, float y) -> bool:
+    let add = (int x, float y) -> bool:
         return x
 
     struct Foo:
+        int age
+        string name
         
 
     
